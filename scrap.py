@@ -1,9 +1,8 @@
 import requests
+from bs4 import BeautifulSoup
 import smtplib
-import yagmail
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
 
 # Replace with your OpenWeatherMap API key and email credentials
 api_key = '62a3e70737f126f675dfa3da70dadcf2'
@@ -27,7 +26,7 @@ def get_weather():
         humidity = data['main']['humidity']
         wind_speed = data['wind']['speed']
         
-        # Format the email content
+        # Format the email content for weather information
         weather_info = (f"Location: {location}\n"
                         f"Temperature: {temperature}°C\n"
                         f"Weather: {weather_description.capitalize()}\n"
@@ -37,15 +36,52 @@ def get_weather():
     else:
         return f"Error: Unable to fetch data (Status code: {response.status_code})"
 
-def send_email(weather_info):
+def get_pagasa_typhoon_alerts():
+    url = "https://www.pagasa.dost.gov.ph/tropical-cyclone/severe-weather-bulletin"
+    response = requests.get(url)
+    typhoon_alerts = ""
+    areas_under_signals = ""
+
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Locate the typhoon alerts section
+        alerts = soup.find_all('div', class_='alert')  # Adjust class if needed
+        for alert in alerts:
+            title = alert.find('h3').get_text(strip=True) if alert.find('h3') else "Typhoon Alert"
+            details = alert.find('p').get_text(strip=True) if alert.find('p') else "Details unavailable"
+            typhoon_alerts += f"{title}\n{details}\n\n"
+        
+        # Attempt to find specific signal information
+        signals_section = soup.find_all('div', class_='signal')  # Adjust as per PAGASA structure
+        for signal in signals_section:
+            signal_level = signal.find('h4').get_text(strip=True) if signal.find('h4') else "Unknown Signal"
+            areas = signal.find('ul').get_text(separator=', ', strip=True) if signal.find('ul') else "No areas listed"
+            areas_under_signals += f"{signal_level}:\nAreas: {areas}\n\n"
+
+        if not typhoon_alerts:
+            typhoon_alerts = "No typhoon alerts from PAGASA at this time."
+        
+        if not areas_under_signals:
+            areas_under_signals = "No areas currently under typhoon signals."
+
+    else:
+        typhoon_alerts = "Error: Unable to fetch PAGASA typhoon alerts."
+        areas_under_signals = "Error: Unable to fetch areas under typhoon signals."
+
+    return typhoon_alerts, areas_under_signals
+
+def send_email(weather_info, typhoon_alerts, areas_under_signals):
     # Set up the MIME message
     message = MIMEMultipart()
     message['From'] = sender_email
     message['To'] = receiver_email
-    message['Subject'] = 'Weather Update for Anulid, Alcala, Pangasinan'
+    message['Subject'] = 'Weather and Typhoon Update for Anulid, Alcala, Pangasinan'
 
-    # Attach the weather information as the email body
-    message.attach(MIMEText(weather_info, 'plain'))
+    # Combine weather and typhoon alert information
+    email_content = (f"{weather_info}\n\nTyphoon Alerts:\n{typhoon_alerts}\n\n"
+                     f"Areas Under Typhoon Signals:\n{areas_under_signals}")
+    message.attach(MIMEText(email_content, 'plain'))
 
     # Set up the server connection and send the email
     try:
@@ -59,11 +95,14 @@ def send_email(weather_info):
     finally:
         server.quit()
 
-# Get the weather information
+# Get the weather information from OpenWeatherMap
 weather_info = get_weather()
 
-# Send the email if the weather data was retrieved successfully
+# Get the latest typhoon alerts and areas under signals from PAGASA
+typhoon_alerts, areas_under_signals = get_pagasa_typhoon_alerts()
+
+# Send the combined email if the weather data was retrieved successfully
 if "Error" not in weather_info:
-    send_email(weather_info)
+    send_email(weather_info, typhoon_alerts, areas_under_signals)
 else:
     print(weather_info)
