@@ -11,8 +11,8 @@ receiver_email = 'jobmanzano104@gmail.com'
 password = 'aoby jhnk loag mvqq'
 
 # Coordinates for Anulid, Alcala, Pangasinan
-latitude = 15.8256
-longitude = 120.4865
+latitude = 15.828220
+longitude = 120.490021
 
 def get_weather():
     url = f'http://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={api_key}&units=metric'
