@@ -1,4 +1,4 @@
-name: Weather and Typhoon Alert Notification Philippines/Anulid
+name: Weather and Typhoon Alert Notification
 
 on:
   schedule:
@@ -23,6 +23,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 selenium
 
+      - name: Download and set up ChromeDriver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip xvfb libxi6 libgconf-2-4
+          wget -N https://chromedriver.storage.googleapis.com/$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip -d /usr/local/bin/
+
       - name: Run Python script
         run: |
-          python3 your_script.py
+          python3 scrap.py
