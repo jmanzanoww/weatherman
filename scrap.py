@@ -184,8 +184,6 @@ def send_email(weather_info, typhoon_alerts, areas_under_signals, ndrrmc_info, a
     <html>
     <body>
         {weather_info}<br><br>
-        {typhoon_alerts}<br><br>
-        {areas_under_signals}<br><br>
         <h2>PAGASA Alert Information</h2>
         {ndrrmc_info}<br><br>
         <h2>Additional Information</h2>
