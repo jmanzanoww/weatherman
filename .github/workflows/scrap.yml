@@ -26,4 +26,4 @@ jobs:
       - name: Run Python script
         run: |
           python3 -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install()"
-          python3 your_script.py
+          python3 scrap.py
