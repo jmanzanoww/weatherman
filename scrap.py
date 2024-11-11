@@ -8,11 +8,10 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import time
 
-
 # Replace with your OpenWeatherMap API key and email credentials
 api_key = '62a3e70737f126f675dfa3da70dadcf2'
 sender_email = 'jobmanzano104@gmail.com'
-receiver_email = 'jobmanzano104@gmail.com'
+receiver_emails = ['jobmanzano104@gmail.com', 'manzanojade751@gmail.com','manzanojade751@gmail.com']  # List of recipient emails
 password = 'aoby jhnk loag mvqq'
 
 # Coordinates for Anulid, Alcala, Pangasinan
@@ -31,7 +30,6 @@ def get_weather():
         humidity = data['main']['humidity']
         wind_speed = data['wind']['speed']
         
-        # Format weather information as an HTML table
         weather_info = f"""
         <table border="1">
             <tr><th colspan="2">Weather Information</th></tr>
@@ -92,31 +90,27 @@ def get_ndrrmc_alert():
 
     try:
         driver.get(url)
-        time.sleep(5)  # Adjust based on loading times
+        time.sleep(5)
 
         element = driver.find_element(By.XPATH, "//*[@id='tcwb-1']/div[5]/div/div/table")
         rows = element.text.splitlines()
 
-        # Count occurrences of "Affected Areas" and prepare for appending Signal Numbers
         affected_areas_count = sum(1 for row in rows if "AFFECTED" in row)
         signal_number = affected_areas_count
 
         ndrrmc_info = "<table border='1'><tr><th>Date</th><th>Report</th></tr>"
-        for row in rows[1:]:  # Skip header
+        for row in rows[1:]:
             if "AFFECTED" in row:
-                # Apply red color directly in the HTML table cell for affected areas
                 row = f"<tr><td colspan='2' style='color: red;'>Affected Areas Signal Number {signal_number}</td></tr>"
-                signal_number -= 1  # Decrease the signal number for the next occurrence
-                ndrrmc_info += row  # Add the styled row directly to the HTML table
-                continue  # Skip the rest of the loop for this row
+                signal_number -= 1
+                ndrrmc_info += row
+                continue
 
-            # Check if "Alcala" is in the row and style it as large, bold, and blue
-            if "Alcala" in row:
-                row = row.replace("Alcala", "<span style='color: blue; font-size: 1.2em; font-weight: bold;'>Alcala</span>")
+            if "Pangasinan" in row:
+                row = row.replace("Pangasinan", "<span style='color: blue; font-size: 1.2em; font-weight: bold;'>Pangasinan</span>")
 
-            # Process other rows normally
             cells = row.split(" ", 1)
-            if len(cells) == 2:  # Only process rows with two parts
+            if len(cells) == 2:
                 ndrrmc_info += f"<tr><td>{cells[0]}</td><td>{cells[1]}</td></tr>"
             elif len(cells) == 1:
                 ndrrmc_info += f"<tr><td colspan='2'>{cells[0]}</td></tr>"
@@ -130,8 +124,6 @@ def get_ndrrmc_alert():
 
     return ndrrmc_info
 
-
-
 def get_additional_info():
     url = "https://www.pagasa.dost.gov.ph/tropical-cyclone/severe-weather-bulletin"
     additional_info = ""
@@ -144,24 +136,19 @@ def get_additional_info():
 
     try:
         driver.get(url)
-        time.sleep(5)  # Wait for the page to load
+        time.sleep(5)
 
-        # Extract information from the specified XPath
         element = driver.find_element(By.XPATH, "//*[@id='tcwb-1']/div[4]")
         raw_text = element.text
 
-        # Split the text into lines
         lines = raw_text.splitlines()
         additional_info = "<table border='1'><tr><th>Date</th><th>Data</th></tr>"
 
-        # Process each line to structure it into "Date" and "Data" columns
         for line in lines:
-            # Check if the line starts with a date-like format, e.g., "YYYY-MM-DD"
-            if len(line) >= 10 and line[:10].count("-") == 2:  # Simplified date check
-                date, data = line[:10], line[11:]  # Assume date is the first 10 characters
+            if len(line) >= 10 and line[:10].count("-") == 2:
+                date, data = line[:10], line[11:]
                 additional_info += f"<tr><td>{date}</td><td>{data}</td></tr>"
             else:
-                # If line does not start with a date, it’s considered part of the previous data
                 additional_info += f"<tr><td colspan='2'>{line}</td></tr>"
 
         additional_info += "</table>"
@@ -173,17 +160,13 @@ def get_additional_info():
 
     return additional_info
 
-
 def send_email(weather_info, typhoon_alerts, areas_under_signals, ndrrmc_info, additional_info):
-    message = MIMEMultipart()
-    message['From'] = sender_email
-    message['To'] = receiver_email
-    message['Subject'] = 'Weather and Typhoon Update for Anulid, Alcala, Pangasinan'
-
     email_content = f"""
     <html>
     <body>
         {weather_info}<br><br>
+        {typhoon_alerts}<br><br>
+        {areas_under_signals}<br><br>
         <h2>PAGASA Alert Information</h2>
         {ndrrmc_info}<br><br>
         <h2>Additional Information</h2>
@@ -191,14 +174,22 @@ def send_email(weather_info, typhoon_alerts, areas_under_signals, ndrrmc_info, a
     </body>
     </html>
     """
-    message.attach(MIMEText(email_content, 'html'))
 
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(sender_email, password)
-        server.sendmail(sender_email, receiver_email, message.as_string())
-        print("Email sent successfully!")
+
+        for receiver_email in receiver_emails:
+            message = MIMEMultipart()
+            message['From'] = sender_email
+            message['To'] = receiver_email
+            message['Subject'] = 'Weather and Typhoon Update for Anulid, Alcala, Pangasinan'
+            message.attach(MIMEText(email_content, 'html'))
+            
+            server.sendmail(sender_email, receiver_email, message.as_string())
+            print(f"Email sent successfully to {receiver_email}!")
+        
     except Exception as e:
         print(f"Failed to send email: {e}")
     finally:
