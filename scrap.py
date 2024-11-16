@@ -11,7 +11,7 @@ import time
 # Replace with your OpenWeatherMap API key and email credentials
 api_key = '62a3e70737f126f675dfa3da70dadcf2'
 sender_email = 'jobmanzano104@gmail.com'
-receiver_emails = ['jobmanzano104@gmail.com', 'manzanojade751@gmail.com','manzanojade751@gmail.com']  # List of recipient emails
+receiver_emails = ['jobmanzano104@gmail.com','manzanojade751@gmail.com']  # List of recipient emails
 password = 'aoby jhnk loag mvqq'
 
 # Coordinates for Anulid, Alcala, Pangasinan
